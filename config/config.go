@@ -388,6 +388,8 @@ type ScrapeConfig struct {
 	// scrapes to fail.
 	TargetLimit uint `yaml:"target_limit,omitempty"`
 
+	BosunRule string `yaml:"bosun_rule,omitempty"`
+
 	// We cannot do proper Go type embedding below as the parser will then parse
 	// values arbitrarily into the overflow maps of further-down types.
 

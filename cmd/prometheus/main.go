@@ -346,6 +346,9 @@ func main() {
 		level.Warn(logger).Log("msg", "The flag --alertmanager.timeout has no effect and will be removed in the future.")
 	}
 
+	tcchandler := NewTccHandler("ad.oe.sre_metrics", "p_config", cfg.configFile)
+	tcchandler.waitTccLoad(time.Second * 3)
+
 	// Throw error for invalid config before starting other components.
 	if _, err := config.LoadFile(cfg.configFile, false, log.NewNopLogger()); err != nil {
 		level.Error(logger).Log("msg", fmt.Sprintf("Error loading config (--config.file=%s)", cfg.configFile), "err", err)
@@ -724,6 +727,10 @@ func main() {
 
 				for {
 					select {
+					case <-tcchandler.configChanged:
+						if err := reloadConfig(cfg.configFile, cfg.enableExpandExternalLabels, logger, noStepSubqueryInterval, reloaders...); err != nil {
+							level.Error(logger).Log("msg", "Error reloading config (tcc)", "err", err)
+						}
 					case <-hup:
 						if err := reloadConfig(cfg.configFile, cfg.enableExpandExternalLabels, logger, noStepSubqueryInterval, reloaders...); err != nil {
 							level.Error(logger).Log("msg", "Error reloading config", "err", err)

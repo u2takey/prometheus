@@ -27,3 +27,20 @@ scrape_configs:
 
     static_configs:
     - targets: ['localhost:9090']
+  - job_name: 'example_bosun'
+    scrape_interval: '60s'
+    bosun_rule: 'avg(q("avg:store:toutiao.service.thrift.ad.platform.sirius.GetOptLogTask.calledby.success.latency.us.pct99", "5m", "1m"))'
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: [ 'example_bosun_cn' ]
+  - job_name: 'opt_log_count'
+    scrape_interval: '300s'
+    bosun_rule: 'sum(q("sum:rate{counter,,,diff}:toutiao.service.thrift.ad.platform.sirius.OptLogWrite.calledby.success.throughput", "1440m", "1m"))'
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: [ 'example_bosun_cn' ]
+

@@ -338,6 +338,7 @@ func (sp *scrapePool) stop() {
 // but all scrape loops are restarted with the new scrape configuration.
 // This method returns after all scrape loops that were stopped have stopped scraping.
 func (sp *scrapePool) reload(cfg *config.ScrapeConfig) error {
+	level.Error(sp.logger).Log("msg", "reload config", "config", debugString(cfg))
 	sp.mtx.Lock()
 	defer sp.mtx.Unlock()
 	targetScrapePoolReloads.Inc()
@@ -377,9 +378,16 @@ func (sp *scrapePool) reload(cfg *config.ScrapeConfig) error {
 		} else {
 			cache = newScrapeCache()
 		}
+		t := sp.activeTargets[fp]
+		var s scraper
+		if cfg.BosunRule != "" {
+			// 注意这里省略了 metricsName 参数，直接使用 JobName，所以对JobName 的格式有要求
+			s = &bosunScraper{Target: t, client: sp.client, timeout: timeout, rule: cfg.BosunRule, metricsName: cfg.JobName}
+		} else {
+			s = &targetScraper{Target: t, client: sp.client, timeout: timeout}
+		}
+
 		var (
-			t       = sp.activeTargets[fp]
-			s       = &targetScraper{Target: t, client: sp.client, timeout: timeout}
 			newLoop = sp.newLoop(scrapeLoopOptions{
 				target:          t,
 				scraper:         s,
@@ -390,6 +398,7 @@ func (sp *scrapePool) reload(cfg *config.ScrapeConfig) error {
 				cache:           cache,
 			})
 		)
+
 		wg.Add(1)
 
 		go func(oldLoop, newLoop loop) {
@@ -465,7 +474,13 @@ func (sp *scrapePool) sync(targets []*Target) {
 		hash := t.hash()
 
 		if _, ok := sp.activeTargets[hash]; !ok {
-			s := &targetScraper{Target: t, client: sp.client, timeout: timeout}
+			var s scraper
+			if sp.config.BosunRule != "" {
+				// 注意这里省略了 metricsName 参数，直接使用 JobName，所以对JobName 的格式有要求
+				s = &bosunScraper{Target: t, client: sp.client, timeout: timeout, rule: sp.config.BosunRule, metricsName: sp.config.JobName}
+			} else {
+				s = &targetScraper{Target: t, client: sp.client, timeout: timeout}
+			}
 			l := sp.newLoop(scrapeLoopOptions{
 				target:          t,
 				scraper:         s,

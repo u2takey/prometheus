@@ -3,6 +3,8 @@ module github.com/prometheus/prometheus
 go 1.14
 
 require (
+	code.byted.org/gopkg/tccclient v1.2.0
+	code.byted.org/inf/metrics-query v0.8.6
 	github.com/Azure/azure-sdk-for-go v52.5.0+incompatible
 	github.com/Azure/go-autorest/autorest v0.11.18
 	github.com/Azure/go-autorest/autorest/adal v0.9.13
